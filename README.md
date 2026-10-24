@@ -94,6 +94,20 @@ Use it:
 - **First moves:** one paste-and-run command each for native binaries and Electron apps. Each gets the whole inventory in a single tool call.
 - **Speed patterns:** start from strings and imports, find a string's function through the otool literal-pool comments, read call sequences rather than every instruction, and diff inventories before diffing code.
 
+## Linux: `leanrea-linux`
+
+`leanrea/SKILL.md` is written for macOS (otool, lipo, codesign, `cp -c`, brew). On Linux some of it fails quietly: `$TMPDIR` is usually unset, GNU `cp -c` preserves SELinux context instead of cloning, and Debian/Ubuntu's default `mawk` has no `strtonum`. [`leanrea-linux/SKILL.md`](leanrea-linux/SKILL.md) is the ELF-first equivalent:
+
+- **First move** for ELF executables and `.so` files: `readelf`, `nm -D`, `strings`, `objdump -d -M intel` in one call.
+- **Helpers for stripped binaries**, which have no function labels on Linux: `str2va` (string → virtual address, since objdump comments RIP-relative loads with an address rather than the string), `fstarts`/`fnof` (function boundaries from `endbr64`) and `trail` (the call/compare trail of one function).
+- **Linux packaging:** AppImage, `.deb`, `.rpm`, snap and flatpak, to find the `app.asar`.
+- **New rows:** USB protocol capture (usbmon + tshark), router firmware with `qemu-user-static`, UEFI/BIOS images (`ifdtool`, `UEFIExtract`, `me_cleaner -c`), the machine's own ACPI/DMI tables, kernel modules, PyInstaller and `/proc`-based runtime inspection.
+- **Fix to the Go row:** after `-ldflags='-s -w'`, `go tool nm` reports "no symbols". Function names are still in `.gopclntab` (`strings`, or GoReSym).
+
+The first-move command and the helpers were tested on a stripped x86-64 PIE (Ubuntu 24.04, binutils 2.42) whose ground truth was known. They recovered a single-instance lock's full protocol (socket path format, bind/listen or connect + write) from the disassembly alone. The benchmark has not yet been rerun on Linux.
+
+Install for Claude Code: `mkdir -p ~/.claude/skills && cp -R leanrea-linux ~/.claude/skills/`, then `/leanrea-linux <question>`.
+
 ## Reproduce the benchmark
 
 Needs macOS with the target Electron app installed (see `bench/setup.sh`), `gh` from Homebrew, Node, and Claude Code logged in.
